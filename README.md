@@ -224,6 +224,16 @@ flask-socketio
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Project Team
+
+- Minh Luong — Team Leader, Firmware Developer, Backend Web Developer, System Integration, AI Engineer (YOLO Object Detection).
+- Anh Ngo — Backend Web Developer, Finance & Procurement Manager
+- Tri Tran — Frontend Web Developer, Backend Web Developer
+- Hoang Tran — Frontend Web Developer
+- Khiem Tran — Frontend Web Developer
+- Ninh Nguyen — Frontend Web Developer
+
 ---
 
 **⚠️ Safety Notice**: Always follow proper electrical safety procedures when working with hardware components. Test each module individually before full system integration.

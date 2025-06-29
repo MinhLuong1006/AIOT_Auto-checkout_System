@@ -2,6 +2,9 @@
 
 A comprehensive automated retail solution combining RFID technology, computer vision, and web interface for seamless shopping experience.
 
+![image](https://github.com/user-attachments/assets/f00ef27c-1953-4143-a758-5414438b493b)
+
+
 ## 🚀 System Overview
 
 This system integrates three main components to create a fully automated retail checkout experience:
@@ -200,9 +203,6 @@ flask-socketio
 - Document any hardware modifications
 - Follow existing code style and structure
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 
@@ -219,3 +219,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **⚠️ Safety Notice**: Always follow proper electrical safety procedures when working with hardware components. Test each module individually before full system integration.
+![image](https://github.com/user-attachments/assets/2b98bf1e-8ab7-4d8e-8941-ff54df2959c2)
+

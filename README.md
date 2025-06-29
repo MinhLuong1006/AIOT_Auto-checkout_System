@@ -221,6 +221,9 @@ flask-socketio
 - Arduino community for hardware integration resources
 - Contributors and testers who helped improve the system
 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 ---
 
 **⚠️ Safety Notice**: Always follow proper electrical safety procedures when working with hardware components. Test each module individually before full system integration.

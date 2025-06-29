@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Login - ShopEase{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="logo">
+        <h1>ShopEase</h1>
+        <p>Your Premium Shopping Destination</p>
+    </div>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                        <button class="flash-close">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" id="loginForm">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+        
+        <div class="remember-forgot">
+            <label class="remember-me">
+                <input type="checkbox" id="remember" name="remember" value="1">
+                Remember me
+            </label>
+            <a href="{{ url_for('reset_password') }}" class="forgot-link">Forgot password?</a>
+        </div>
+        
+        <button type="submit" class="login-btn" id="loginButton">
+            Sign In
+        </button>
+    </form>
+    
+    <div class="divider">
+        <span>Don't have an account?</span>
+    </div>
+    
+    <div class="secondary-buttons">
+        <a href="{{ url_for('signup') }}" class="signup-btn">
+            Create New Account
+        </a>
+        <a href="{{ url_for('reset_password') }}" class="reset-btn">
+            Reset Password
+        </a>
+    </div>
+</div>
+{% endblock %}

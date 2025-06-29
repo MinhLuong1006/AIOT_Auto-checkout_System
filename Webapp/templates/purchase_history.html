@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase History - ShopEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="purchase-history-container">
+        <!-- Header -->
+        <div class="purchase-history-header">
+            <div class="logo">
+                <h1>ShopEase</h1>
+                <p>Your Premium Shopping Destination</p>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('dashboard') }}" class="back-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m12 19-7-7 7-7"/>
+                        <path d="m19 12H5"/>
+                    </svg>
+                    Back to Dashboard
+                </a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16,17 21,12 16,7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="welcome-content">
+                <h2>Purchase History</h2>
+                <p>Welcome back, {{ username }}! Here's your complete purchase history grouped by date.</p>
+            </div>
+            <div class="history-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalOrders">0</div>
+                    <div class="stat-label">Total Orders</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalSpent">$0.00</div>
+                    <div class="stat-label">Total Spent</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loadingState">
+            <div class="spinner"></div>
+            <p>Loading your purchase history...</p>
+        </div>
+
+        <!-- Filter and Search -->
+        <div class="filter-section" id="filterSection" style="display: none;">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search purchases...">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+            </div>
+            <div class="filter-controls">
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Food & Beverages">Food & Beverages</option>
+                    <option value="Health & Fitness">Health & Fitness</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Home & Kitchen">Home & Kitchen</option>
+                    <option value="General">General</option>
+                </select>
+                <button id="clearFilters" class="clear-btn">Clear Filters</button>
+            </div>
+        </div>
+
+        <!-- Purchase History List -->
+        <div class="purchase-list" id="purchaseList" style="display: none;">
+            <!-- Day groups will be populated by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+            </div>
+            <h3>No purchases found</h3>
+            <p>Try adjusting your search or filter criteria</p>
+            <button id="clearSearchBtn" class="clear-search-btn">Clear Search</button>
+        </div>
+
+        <!-- No Data State -->
+        <div class="empty-state" id="noDataState" style="display: none;">
+            <div class="empty-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h4"/>
+                    <path d="M20 12c0 5-3.3 7-7 7l-3.5-1.5"/>
+                    <path d="M20 12L10 2"/>
+                </svg>
+            </div>
+            <h3>No purchase history yet</h3>
+            <p>Start shopping to see your purchase history here!</p>
+            <a href="{{ url_for('dashboard') }}" class="clear-search-btn">Go to Dashboard</a>
+        </div>
+
+        <!-- Error State -->
+        <div class="empty-state" id="errorState" style="display: none;">
+            <div class="empty-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </div>
+            <h3>Error loading purchase history</h3>
+            <p>Something went wrong while loading your data. Please try again.</p>
+            <button id="retryBtn" class="clear-search-btn">Retry</button>
+        </div>
+    </div>
+
+    <!-- Purchase Detail Modal -->
+    <div class="modal-overlay" id="purchaseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Purchase Details</h3>
+                <button class="modal-close" id="closeModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Purchase details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let purchaseData = [];
+        let filteredData = [];
+        let groupedData = {};
+
+        // Get category icon
+        function getCategoryIcon(category) {
+            const icons = {
+                'Electronics': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>`,
+                'Food & Beverages': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                    <line x1="6" y1="1" x2="6" y2="4"/>
+                    <line x1="10" y1="1" x2="10" y2="4"/>
+                    <line x1="14" y1="1" x2="14" y2="4"/>
+                </svg>`,
+                'Health & Fitness': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>`,
+                'Clothing': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+                </svg>`,
+                'Home & Kitchen': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9,22 9,12 15,12 15,22"/>
+                </svg>`,
+                'General': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                </svg>`
+            };
+            return icons[category] || icons['General'];
+        }
+
+        // Get category class for styling
+        function getCategoryClass(category) {
+            const classes = {
+                'Electronics': 'electronics',
+                'Food & Beverages': 'food',
+                'Health & Fitness': 'health',
+                'Clothing': 'clothing',
+                'Home & Kitchen': 'home',
+                'General': 'general'
+            };
+            return classes[category] || 'general';
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        // Group purchases by date
+        function groupPurchasesByDate(data) {
+            const grouped = {};
+            data.forEach(purchase => {
+                const date = purchase.date;
+                if (!grouped[date]) {
+                    grouped[date] = [];
+                }
+                grouped[date].push(purchase);
+            });
+            return grouped;
+        }
+
+        // Calculate daily total
+        function calculateDayTotal(purchases) {
+            return purchases.reduce((total, purchase) => total + purchase.price, 0);
+        }
+
+        // Auto-categorize items based on keywords
+        function categorizeItem(itemName) {
+            const item = itemName.toLowerCase();
+            
+            if (/phone|laptop|computer|headphone|earbuds|tablet|watch|tv|camera|speaker|charger|cable/.test(item)) {
+                return 'Electronics';
+            } else if (/coffee|tea|juice|water|snack|bread|milk|food|drink|beverage|beer|wine/.test(item)) {
+                return 'Food & Beverages';
+            } else if (/vitamin|supplement|protein|fitness|gym|yoga|exercise|health|medicine|medical/.test(item)) {
+                return 'Health & Fitness';
+            } else if (/shirt|pants|dress|shoe|jacket|hat|clothing|apparel|fashion|wear/.test(item)) {
+                return 'Clothing';
+            } else if (/kitchen|home|furniture|decor|appliance|cookware|utensil|plate|cup|bowl/.test(item)) {
+                return 'Home & Kitchen';
+            } else {
+                return 'General';
+            }
+        }
+
+        // Fetch purchase history from Flask API
+        async function fetchPurchaseHistory() {
+            try {
+                showLoadingState();
+                
+                const response = await fetch('/api/purchase-history');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Process the purchase data - ALL items will have "PAID" status
+                purchaseData = data.purchases.map(purchase => ({
+                    id: purchase.id,
+                    item: purchase.item,
+                    category: purchase.category || categorizeItem(purchase.item),
+                    date: purchase.date,
+                    amount: parseFloat(purchase.amount),
+                    price: parseFloat(purchase.price || 0),
+                    status: 'PAID' // Force all items to show PAID status
+                }));
+                
+                // Update stats
+                updateStats(data.total_orders, data.total_spent);
+                
+                if (purchaseData.length === 0) {
+                    showNoDataState();
+                } else {
+                    filteredData = [...purchaseData];
+                    showDataState();
+                    renderPurchaseList();
+                }
+                
+            } catch (error) {
+                console.error('Error fetching purchase history:', error);
+                showErrorState();
+            }
+        }
+
+        // Update statistics
+        function updateStats(totalOrders, totalSpent) {
+            document.getElementById('totalOrders').textContent = totalOrders || 0;
+            document.getElementById('totalSpent').textContent = `$${(totalSpent || 0).toFixed(2)}`;
+        }
+
+        // Show loading state
+        function showLoadingState() {
+            document.getElementById('loadingState').style.display = 'flex';
+            document.getElementById('filterSection').style.display = 'none';
+            document.getElementById('purchaseList').style.display = 'none';
+            document.getElementById('emptyState').classList.remove('show');
+            document.getElementById('noDataState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+        }
+
+        // Show data state (when purchases exist)
+        function showDataState() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('filterSection').style.display = 'flex';
+            document.getElementById('purchaseList').style.display = 'flex';
+            document.getElementById('emptyState').classList.remove('show');
+            document.getElementById('noDataState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+        }
+
+        // Show no data state (when user has no purchases)
+        function showNoDataState() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('filterSection').style.display = 'none';
+            document.getElementById('purchaseList').style.display = 'none';
+            document.getElementById('emptyState').classList.remove('show');
+            document.getElementById('noDataState').style.display = 'flex';
+            document.getElementById('errorState').style.display = 'none';
+        }
+
+        // Show error state
+        function showErrorState() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('filterSection').style.display = 'none';
+            document.getElementById('purchaseList').style.display = 'none';
+            document.getElementById('emptyState').classList.remove('show');
+            document.getElementById('noDataState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'flex';
+        }
+        // Add a new function to calculate total quantity for a day
+        function calculateDayItemCount(purchases) {
+        return purchases.reduce((total, purchase) => total + purchase.amount, 0); // Sum up all quantities
+        }
+        // Render purchase list
+        function renderPurchaseList() {
+    const purchaseList = document.getElementById('purchaseList');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (filteredData.length === 0) {
+        purchaseList.style.display = 'none';
+        emptyState.classList.add('show');
+        return;
+    }
+    
+    emptyState.classList.remove('show');
+    purchaseList.style.display = 'flex';
+    
+    groupedData = groupPurchasesByDate(filteredData);
+    const sortedDates = Object.keys(groupedData).sort((a, b) => new Date(b) - new Date(a));
+    
+    let html = '';
+    
+    sortedDates.forEach(date => {
+        const purchases = groupedData[date];
+        const dayTotal = calculateDayTotal(purchases); // Total cost
+        const dayItemCount = calculateDayItemCount(purchases); // Total quantity
+        
+        html += `
+            <div class="day-group">
+                <div class="day-header" onclick="toggleDay('${date}')">
+                    <div class="day-info">
+                        <div class="day-date">${formatDate(date)}</div>
+                        <div class="day-meta">
+                            <span class="item-count">${dayItemCount} item${dayItemCount > 1 ? 's' : ''}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div class="day-total">$${dayTotal.toFixed(2)}</div>
+                        <svg class="expand-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6,9 12,15 18,9"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="day-products" id="day-${date}">
+                    ${purchases.map(purchase => `
+                        <div class="product-item" onclick="showPurchaseDetails('${purchase.id}')">
+                            <div class="product-icon ${getCategoryClass(purchase.category)}">
+                                ${getCategoryIcon(purchase.category)}
+                            </div>
+                            <div class="product-details">
+                                <div class="product-name">${purchase.item}</div>
+                                <span class="product-category">${purchase.category}</span>
+                            </div>
+                            <div class="product-status">
+                                <span class="status-badge status-paid">PAID</span>
+                            </div>
+                            <div class="product-amount">$${purchase.price.toFixed(2)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    purchaseList.innerHTML = html;
+}
+
+        // Toggle day expansion
+        function toggleDay(date) {
+            const dayProducts = document.getElementById(`day-${date}`);
+            const dayHeader = dayProducts.previousElementSibling;
+            
+            if (dayProducts.classList.contains('expanded')) {
+                dayProducts.classList.remove('expanded');
+                dayHeader.classList.remove('expanded');
+            } else {
+                dayProducts.classList.add('expanded');
+                dayHeader.classList.add('expanded');
+            }
+        }
+
+        // Show purchase details in modal
+        function showPurchaseDetails(purchaseId) {
+    const purchase = purchaseData.find(p => p.id === purchaseId);
+    if (!purchase) return;
+    
+    const modalBody = document.getElementById('modalBody');
+    const orderDate = new Date(purchase.date);
+    const deliveryDate = new Date(orderDate);
+    deliveryDate.setDate(deliveryDate.getDate() + 3);
+    
+    // Quantity comes from the 'amount' field in Firebase
+    // Total cost comes from the 'price' field in Firebase
+
+    let price = purchase.price || 0; // This should be the price from Firebase
+    let amount = purchase.amount || 1; // Default to 1 if not specified
+    modalBody.innerHTML = `
+        <div class="detail-header">
+            <div class="detail-icon ${getCategoryClass(purchase.category)}">
+                ${getCategoryIcon(purchase.category)}
+            </div>
+            <div class="detail-info">
+                <h4>${purchase.item}</h4>
+                <p>${purchase.category}</p>
+            </div>
+        </div>
+        
+        <div class="detail-section">
+            <div class="detail-row">
+                <span class="detail-label">Order ID</span>
+                <span class="detail-value">#${purchase.id}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Purchase Date</span>
+                <span class="detail-value">${formatDate(purchase.date)}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status</span>
+                <span class="status-badge status-paid">PAID</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Quantity</span>
+                <span class="detail-value">${amount}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Total Cost</span>
+                <span class="detail-value amount-highlight">$${price.toFixed(2)}</span>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('purchaseModal').classList.add('show');
+}
+
+        // Filter functions
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            
+            filteredData = purchaseData.filter(purchase => {
+                const matchesSearch = purchase.item.toLowerCase().includes(searchTerm) ||
+                                    purchase.category.toLowerCase().includes(searchTerm);
+                const matchesCategory = !categoryFilter || purchase.category === categoryFilter;
+                
+                return matchesSearch && matchesCategory;
+            });
+            
+            renderPurchaseList();
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            filteredData = [...purchaseData];
+            renderPurchaseList();
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load purchase history from Firebase
+            fetchPurchaseHistory();
+            
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            
+            // Filter selects
+            document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+            
+            // Clear filters button
+            document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            
+            // Clear search button (in empty state)
+            document.getElementById('clearSearchBtn').addEventListener('click', clearFilters);
+            
+            // Retry button (in error state)
+            document.getElementById('retryBtn').addEventListener('click', fetchPurchaseHistory);
+            
+            // Modal close
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('purchaseModal').classList.remove('show');
+            });
+            
+            // Close modal when clicking overlay
+            document.getElementById('purchaseModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Escape key to close modal
+            if (e.key === 'Escape') {
+                document.getElementById('purchaseModal').classList.remove('show');
+            }
+            
+            // Ctrl/Cmd + F to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput && searchInput.style.display !== 'none') {
+                    searchInput.focus();
+                }
+            }
+        });
+    </script>
+
+    <style>
+        /* Loading spinner styles */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-state p {
+            color: #666;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        /* Additional styles for better UX */
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: #666;
+        }
+
+        .empty-state.show {
+            display: flex !important;
+        }
+
+        .general {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+        }
+
+        /* PAID status styling */
+        .status-paid {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Item Inventory</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    <style>
+        .item-count {
+            position: relative;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .item-count:hover {
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+        }
+        
+        .item-count.editing {
+            background-color: #fff;
+            border: 2px solid #007bff;
+        }
+        
+        .count-input {
+            border: none;
+            background: transparent;
+            font-size: inherit;
+            font-weight: inherit;
+            color: inherit;
+            text-align: center;
+            width: 60px;
+            outline: none;
+        }
+        
+        .count-input:focus {
+            background-color: #fff;
+        }
+        
+        .edit-hint {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        
+        .item-count:hover .edit-hint {
+            opacity: 1;
+        }
+        
+        .item-count.editing .edit-hint {
+            opacity: 0;
+        }
+        
+        .update-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 4px;
+            color: #fff;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .update-status.success {
+            background-color: #28a745;
+        }
+        
+        .update-status.error {
+            background-color: #dc3545;
+        }
+        
+        .update-status.show {
+            opacity: 1;
+        }
+        
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+        }
+        
+        .item-row:hover {
+            background-color: #00ff22;
+        }
+        
+        .item-name {
+            font-weight: 500;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>Admin Dashboard</h1>
+                <div class="user-info">
+                    <span>Welcome, {{ username }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <h3>Total Items in Storage</h3>
+                    <p class="stat-number">{{ item_counts.values() | sum }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Different Item Types</h3>
+                    <p class="stat-number">{{ item_counts | length }}</p>
+                </div>
+            </div>
+
+            <div class="inventory-section">
+                <h2>Item Inventory</h2>
+                <div class="items-list">
+                    {% for item, count in item_counts.items() %}
+                    <div class="item-row">
+                        <span class="item-name">{{ item }}</span>
+                        <span class="item-count" data-item="{{ item }}" data-original-count="{{ count }}">
+                            {{ count }}
+                            <div class="edit-hint">Click to edit</div>
+                        </span>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not item_counts %}
+                    <div class="no-items">
+                        <p>No items found in the system.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Update status notification -->
+    <div class="update-status" id="updateStatus"></div>
+
+    <script>
+// Real-time updates every 5 seconds
+function updateItemCounts() {
+    fetch('/api/admin/items')
+        .then(response => response.json())
+        .then(data => {
+            if (data.items) {
+                updateItemsDisplay(data.items);
+                updateStats(data.total_items, data.unique_items);
+            }
+        })
+        .catch(error => console.error('Error fetching items:', error));
+}
+
+function updateItemsDisplay(items) {
+    const itemsList = document.querySelector('.items-list');
+    const sortedItems = Object.entries(items).sort((a, b) => b[1] - a[1]);
+    
+    // Store currently editing item to preserve edit state
+    const currentlyEditing = document.querySelector('.item-count.editing');
+    let editingItem = null;
+    if (currentlyEditing) {
+        editingItem = currentlyEditing.dataset.item;
+    }
+    
+    itemsList.innerHTML = '';
+    
+    if (sortedItems.length === 0) {
+        itemsList.innerHTML = '<div class="no-items"><p>No items found in storage.</p></div>';
+        return;
+    }
+    
+    sortedItems.forEach(([item, count]) => {
+        const itemRow = document.createElement('div');
+        itemRow.className = 'item-row';
+        itemRow.innerHTML = `
+            <span class="item-name">${item}</span>
+            <span class="item-count" data-item="${item}" data-original-count="${count}">
+                ${count}
+                <div class="edit-hint">Click to edit</div>
+            </span>
+        `;
+        itemsList.appendChild(itemRow);
+        
+        // Restore editing state if item was being edited
+        if (editingItem === item) {
+            const countSpan = itemRow.querySelector('.item-count');
+            makeEditable(countSpan);
+        }
+    });
+    
+    // Re-attach event listeners
+    attachEditListeners();
+}
+
+function updateStats(totalItems, uniqueItems) {
+    const statNumbers = document.querySelectorAll('.stat-number');
+    if (statNumbers.length >= 2) {
+        statNumbers[0].textContent = totalItems;
+        statNumbers[1].textContent = uniqueItems;
+    }
+}
+
+function attachEditListeners() {
+    const itemCounts = document.querySelectorAll('.item-count');
+    itemCounts.forEach(countSpan => {
+        countSpan.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!this.classList.contains('editing')) {
+                makeEditable(this);
+            }
+        });
+    });
+}
+
+function makeEditable(countSpan) {
+    const currentCount = countSpan.textContent.trim();
+    const itemName = countSpan.dataset.item;
+    
+    countSpan.classList.add('editing');
+    countSpan.innerHTML = `
+        <input type="number" class="count-input" value="${currentCount}" min="0" max="9999">
+    `;
+    
+    const input = countSpan.querySelector('.count-input');
+    input.focus();
+    input.select();
+    
+    // Handle saving
+    const saveChanges = () => {
+        const newCount = parseInt(input.value) || 0;
+        const originalCount = parseInt(countSpan.dataset.originalCount);
+        
+        if (newCount !== originalCount && newCount >= 0) {
+            updateItemCount(itemName, newCount, countSpan);
+        } else {
+            // Revert to original
+            countSpan.classList.remove('editing');
+            countSpan.innerHTML = `
+                ${originalCount}
+                <div class="edit-hint">Click to edit</div>
+            `;
+        }
+    };
+    
+    // Save on Enter or blur
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            saveChanges();
+        } else if (e.key === 'Escape') {
+            // Cancel edit
+            countSpan.classList.remove('editing');
+            countSpan.innerHTML = `
+                ${countSpan.dataset.originalCount}
+                <div class="edit-hint">Click to edit</div>
+            `;
+        }
+    });
+    
+    input.addEventListener('blur', saveChanges);
+}
+
+function updateItemCount(itemName, newCount, countSpan) {
+    // Show loading state
+    countSpan.innerHTML = `
+        <span style="opacity: 0.5;">Updating...</span>
+    `;
+    
+    // Send update to server
+    fetch('/api/admin/update-item', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            item: itemName,
+            count: newCount
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update successful
+            countSpan.classList.remove('editing');
+            countSpan.dataset.originalCount = newCount;
+            countSpan.innerHTML = `
+                ${newCount}
+                <div class="edit-hint">Click to edit</div>
+            `;
+            showUpdateStatus('Item updated successfully!', 'success');
+            
+            // Refresh stats
+            setTimeout(updateItemCounts, 500);
+        } else {
+            // Update failed
+            countSpan.classList.remove('editing');
+            countSpan.innerHTML = `
+                ${countSpan.dataset.originalCount}
+                <div class="edit-hint">Click to edit</div>
+            `;
+            showUpdateStatus(data.message || 'Update failed!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating item:', error);
+        countSpan.classList.remove('editing');
+        countSpan.innerHTML = `
+            ${countSpan.dataset.originalCount}
+            <div class="edit-hint">Click to edit</div>
+        `;
+        showUpdateStatus('Network error occurred!', 'error');
+    });
+}
+
+function showUpdateStatus(message, type) {
+    const statusDiv = document.getElementById('updateStatus');
+    statusDiv.textContent = message;
+    statusDiv.className = `update-status ${type} show`;
+    
+    setTimeout(() => {
+        statusDiv.classList.remove('show');
+    }, 3000);
+}
+
+// Click outside to cancel edit
+document.addEventListener('click', function(e) {
+    const editingCount = document.querySelector('.item-count.editing');
+    if (editingCount && !editingCount.contains(e.target)) {
+        const input = editingCount.querySelector('.count-input');
+        if (input) {
+            input.blur();
+        }
+    }
+});
+
+// Update every 5 seconds (but pause if editing)
+setInterval(() => {
+    const isEditing = document.querySelector('.item-count.editing');
+    if (!isEditing) {
+        updateItemCounts();
+    }
+}, 5000);
+
+// Initial load
+updateItemCounts();
+
+// Attach initial event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    attachEditListeners();
+});
+</script>
+</body>
+</html>

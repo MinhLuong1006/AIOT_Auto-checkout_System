@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Display</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="items-section">
+                <h2>Scanned Items</h2>
+                <div id="items-list" class="items-list">
+                    <!-- Items will be populated here -->
+                </div>
+            </div>
+            
+            <div class="total-section">
+                <h2>Total</h2>
+                <div id="total-amount" class="total-amount">$0.00</div>
+            </div>
+        </div>
+        
+        <div class="status-section">
+            <div id="status-message" class="status-message">
+                Scanning in progress...
+            </div>
+        </div>
+    </div>
+
+    <!-- Thank You Notification Overlay -->
+    <div id="thank-you-overlay" class="thank-you-overlay hidden">
+        <div class="thank-you-modal">
+            <div class="thank-you-content">
+                <h1>Thank you for buying!</h1>
+                <h2>See you again!</h2>
+                <p>When you have collected all your items, click here to open the gate.</p>
+                <button id="open-gate-btn" class="open-gate-button">Open Gate</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration - Replace with your config
+        const firebaseConfig = {
+            // Your Firebase config here
+            databaseURL: "https://auto-checkout-b3ea1-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // References to DOM elements
+        const itemsList = document.getElementById('items-list');
+        const totalAmount = document.getElementById('total-amount');
+        const statusMessage = document.getElementById('status-message');
+        const thankYouOverlay = document.getElementById('thank-you-overlay');
+        const openGateBtn = document.getElementById('open-gate-btn');
+
+        // Listen for changes in items
+        database.ref('display/items').on('value', (snapshot) => {
+            const items = snapshot.val();
+            displayItems(items);
+        });
+
+        // Listen for changes in total
+        database.ref('display/total').on('value', (snapshot) => {
+            const total = snapshot.val();
+            if (total !== null) {
+                totalAmount.textContent = `$${total.toFixed(2)}`;
+            }
+        });
+
+        // Listen for changes in over status
+        database.ref('over').on('value', (snapshot) => {
+            const over = snapshot.val();
+            updateStatus(over);
+        });
+
+        // Listen for changes in clear status
+        database.ref('clear').on('value', (snapshot) => {
+            const clear = snapshot.val();
+            if (clear === 1) {
+                showThankYouNotification();
+            }
+        });
+
+        // Open gate button click handler
+        openGateBtn.addEventListener('click', () => {
+            // Set both in_process and clear to 0
+            const updates = {
+                'in_process': 0,
+                'clear': 0
+            };
+            
+            database.ref().update(updates).then(() => {
+                console.log('in_process and clear set to 0');
+                // Hide the notification
+                hideThankYouNotification();
+            }).catch((error) => {
+                console.error('Error updating values:', error);
+            });
+        });
+
+        function displayItems(items) {
+            itemsList.innerHTML = '';
+            
+            if (!items) {
+                itemsList.innerHTML = '<div class="no-items">No items scanned</div>';
+                return;
+            }
+
+            for (const [itemName, quantity] of Object.entries(items)) {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'item';
+                itemElement.innerHTML = `
+                    <span class="item-name">${itemName}</span>
+                    <span class="item-quantity">× ${quantity}</span>
+                `;
+                itemsList.appendChild(itemElement);
+            }
+        }
+
+        function updateStatus(over) {
+            if (over === 1) {
+                statusMessage.textContent = 'Scan your card here to pay';
+                statusMessage.className = 'status-message payment-ready';
+            } else {
+                statusMessage.textContent = 'Scanning in progress...';
+                statusMessage.className = 'status-message scanning';
+            }
+        }
+
+        function showThankYouNotification() {
+            thankYouOverlay.classList.remove('hidden');
+            thankYouOverlay.classList.add('visible');
+        }
+
+        function hideThankYouNotification() {
+            thankYouOverlay.classList.remove('visible');
+            thankYouOverlay.classList.add('hidden');
+        }
+
+        // Initial load - get current data
+        database.ref('display').once('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.items) displayItems(data.items);
+                if (data.total) totalAmount.textContent = `$${data.total.toFixed(2)}`;
+            }
+        });
+
+        database.ref('over').once('value', (snapshot) => {
+            const over = snapshot.val();
+            updateStatus(over);
+        });
+
+        // Check initial clear status
+        database.ref('clear').once('value', (snapshot) => {
+            const clear = snapshot.val();
+            if (clear === 1) {
+                showThankYouNotification();
+            }
+        });
+    </script>
+</body>
+</html>

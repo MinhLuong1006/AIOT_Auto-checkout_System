@@ -1,4 +1,9 @@
 # AIOT Auto-checkout System
+![Team Project](https://img.shields.io/badge/Team%20Project-Yes-blueviolet)
+![Python](https://img.shields.io/badge/Python-3.8-blue)
+![Flask](https://img.shields.io/badge/Flask-webapp-yellow)
+![Arduino](https://img.shields.io/badge/Hardware-Arduino-green)
+![Firebase](https://img.shields.io/badge/Firebase-Realtime%20DB-orange)
 
 A comprehensive automated retail solution combining RFID technology, computer vision, and web interface for seamless shopping experience.
 

@@ -10,7 +10,7 @@ A comprehensive automated retail solution combining RFID technology, computer vi
 ![image](https://github.com/user-attachments/assets/f00ef27c-1953-4143-a758-5414438b493b)
 
 
-## 🚀 System Overview
+##  System Overview
 
 This system integrates three main components to create a fully automated retail checkout experience:
 

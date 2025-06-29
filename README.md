@@ -35,7 +35,7 @@ AIOT-Auto-checkout/
     └── [web files]        # Additional web application files
 ```
 
-## 🔧 Hardware Components
+##  Hardware Components
 
 ### Arduino Controllers
 
@@ -65,7 +65,7 @@ AIOT-Auto-checkout/
 - RFID cards and tags
 - Mechanical components for gates and sorting mechanism
 
-## 🤖 YOLOv11 AI Model Setup
+##  YOLOv11 AI Model Setup
 
 ### Prerequisites
 - [Anaconda](https://www.anaconda.com/products/distribution) installed
@@ -95,9 +95,9 @@ python yolo_detect.py --model my_model.pt --source 0 --resolution 1280x720
 ```
 
 ### Additional Resources
-📺 For detailed setup instructions, watch: [YOLOv11 Tutorial](your-tutorial-link-here)
+ For detailed setup instructions, watch: [YOLOv11 Tutorial](your-tutorial-link-here)
 
-## 🌐 Web Application Setup
+##  Web Application Setup
 
 ### Prerequisites
 - Python 3.7+ installed
@@ -143,7 +143,7 @@ graph TD
 3. **Checkout**: User scans card for automatic billing (RFID3)
 4. **Monitoring**: Web application provides real-time system overview
 
-## 🛠️ Setup Instructions
+## 🛠 Setup Instructions
 
 ### Arduino Setup
 1. Install [Arduino IDE](https://www.arduino.cc/en/software)
@@ -164,7 +164,7 @@ graph TD
 | RFID RST | GPIO 22 | |
 | Servo PWM | GPIO 2 | Adjust per design |
 
-## 📋 Software Dependencies
+##  Software Dependencies
 
 ### Python Packages
 ```bash
@@ -186,7 +186,7 @@ flask-socketio
 - WiFi
 - ArduinoJson
 
-## 🚨 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 - **RFID not reading**: Check wiring connections and power supply
@@ -194,7 +194,7 @@ flask-socketio
 - **Camera not detected**: Ensure proper USB connection and permissions
 - **Web app not loading**: Check if port 5000 is available
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -209,13 +209,13 @@ flask-socketio
 - Follow existing code style and structure
 
 
-## 📞 Support
+##  Support
 
-- 📧 **Issues**: Please use the [GitHub Issues](../../issues) page
-- 📚 **Documentation**: Check individual component folders for detailed docs
-- 🎥 **Video Tutorials**: [YOLOv11 Setup Guide](your-link-here)
+-  **Issues**: Please use the [GitHub Issues](../../issues) page
+-  **Documentation**: Check individual component folders for detailed docs
+-  **Video Tutorials**: [YOLOv11 Setup Guide](your-link-here)
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - YOLOv11 team for the object detection framework
 - Arduino community for hardware integration resources
